@@ -107,7 +107,12 @@ describe('Model Builder', function() {
     describe('Range', function () {
         it('should reject numeric values under range', function () {
             var model = new Model([{
-                age: { range: [0, 100] }
+                age: {
+                    range: {
+                        min: 0,
+                        max: 100
+                    }
+                }
             }]);
             var data = { age: -1 };
             var error = new ModelError('Property "age" should be a number between 0 and 100.');
@@ -117,7 +122,12 @@ describe('Model Builder', function() {
         });
         it('should reject numeric values over range', function () {
             var model = new Model([{
-                age: { range: [0, 100] }
+                age: {
+                    range: {
+                        min: 0,
+                        max: 100
+                    }
+                }
             }]);
             var data = { age: 125 };
             var error = new ModelError('Property "age" should be a number between 0 and 100.');
@@ -127,23 +137,66 @@ describe('Model Builder', function() {
         });
         it('should reject strings under length', function () {
             var model = new Model([{
-                nationality: { range: [5, 10] }
+                nationality: {
+                    range: {
+                        min: 5
+                    }
+                }
             }]);
             var data = { nationality: 'us' };
-            var error = new ModelError('Property "nationality" should have a length between 5 and 10.');
+            var error = new ModelError('Property "nationality" should have a length greater than 5 characters.');
             assert.throws(() => {
                 model.validate(data);
             }, error);
         });
         it('should reject strings over length', function () {
             var model = new Model([{
-                nationality: { range: [5, 10] }
+                nationality: {
+                    range: {
+                        max: 10
+                    }
+                }
             }]);
             var data = { nationality: 'Citizen of the World' };
-            var error = new ModelError('Property "nationality" should have a length between 5 and 10.');
+            var error = new ModelError('Property "nationality" should have a length under 10 characters.');
             assert.throws(() => {
                 model.validate(data);
             }, error);
+        });
+        it('should allow values on range', function () {
+            var model = new Model([{
+                nationality: {
+                    range: {
+                        min: 5,
+                        max: 10
+                    }
+                }
+            }]);
+            var data = { nationality: 'Albania' };
+            var error = new ModelError('Property "nationality" should have a length between 5 and 10 characters.');
+            assert.deepStrictEqual(model.validate(data), data);
+        });
+        it('should allow values on range lower bounded', function () {
+            var model = new Model([{
+                nationality: {
+                    range: {
+                        min: 5
+                    }
+                }
+            }]);
+            var data = { nationality: 'Kazakhstan' };
+            assert.deepStrictEqual(model.validate(data), data);
+        });
+        it('should allow values on range upper bounded', function () {
+            var model = new Model([{
+                nationality: {
+                    range: {
+                        max: 30
+                    }
+                }
+            }]);
+            var data = { nationality: 'São Tomé and Príncipe' };
+            assert.deepStrictEqual(model.validate(data), data);
         });
     });
 
@@ -245,7 +298,9 @@ describe('Model Builder', function() {
         it('should reject invalid type inside array', function () {
             var model = new Model({
                 type: 'array',
-                range: [1, Infinity],
+                range: {
+                    min: 1
+                },
                 elements: {type: 'number'}
             });
             var data = [1, 2, 'c'];
@@ -258,7 +313,9 @@ describe('Model Builder', function() {
             var model = new Model([{
                 rooms: {
                     type: 'array',
-                    range: [1, Infinity],
+                    range: {
+                        min: 1
+                    },
                     elements: [{
                         size: {
                             type: 'number'
@@ -280,7 +337,10 @@ describe('Model Builder', function() {
         it('should reject invalid type inside nested arrays', function () {
             var model = new Model({
                 type: 'array',
-                range: [1, 1],
+                range: {
+                    min: 1,
+                    max: 1
+                },
                 elements: {
                     type: 'array',
                     elements: {
@@ -323,11 +383,24 @@ describe('Model Builder', function() {
                     elements: { type: model }
                 }
             }]);
-            var data = { name: 'name' };
-            var error = new ModelError('Required property "name" missing.');
-            assert.throws(() => {
-                model.validate(data);
-            }, error);
+            var data = {
+                name: 'Alice',
+                age: 42,
+                married: true,
+                children: [
+                    {
+                        name: 'Bob',
+                        age: 13,
+                        married: false
+                    },
+                    {
+                        name: 'Charlie',
+                        age: 21,
+                        married: false
+                    },
+                ]
+            };
+            assert.deepStrictEqual(model.validate(data), data);
         });
     });
 
@@ -367,6 +440,42 @@ describe('Model Builder', function() {
                 model.validate(data);
             }, error);
         });
+        it('should allow deep nesting', function () {
+            var model = new Model([{
+                name: { type: String, required: true },
+                age: { type: Number, required: true },
+                married: { type: Boolean, required: true },
+                children: {
+                    type: Array,
+                    elements: { type: model }
+                }
+            }]);
+            var data = {
+                name: 'Alice',
+                age: 42,
+                married: true,
+                children: [
+                    {
+                        name: 'Bob',
+                        age: 13,
+                        married: false
+                    },
+                    {
+                        name: 'Charlie',
+                        age: 21,
+                        married: true,
+                        children: [
+                            {
+                                name: 'David',
+                                age: 1,
+                                married: false
+                            }
+                        ]
+                    },
+                ]
+            };
+            assert.deepStrictEqual(model.validate(data), data);
+        });
     });
 
     describe('Complex', function () {
@@ -384,7 +493,10 @@ describe('Model Builder', function() {
                 lat: {
                     required: true,
                     type: 'number',
-                    range: [-90, 90],
+                    range: {
+                        min: -90,
+                        max: 90
+                    },
                     message: {
                         range: 'invalid latitude'
                     }
@@ -419,7 +531,10 @@ describe('Model Builder', function() {
                     currency: {
                         required: true,
                         type: 'string',
-                        range: [1, 5]
+                        range: {
+                            min: 1,
+                            max: 5
+                        }
                     }
                 }]
             }

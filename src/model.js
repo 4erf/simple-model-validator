@@ -4,18 +4,28 @@ class ModelError extends Error {
         this.name = 'Model Error';
     }
 }
-
 var defaultErrors = {
     required: (path) => `Required property "${path}" missing.`,
     type: (path, type) => `Type of property "${path}" should be ${type}.`,
     enum: (path, enumVals) => `Property "${path}" should be ${enumVals.join(', ')}.`,
     range: (path, range, value) => {
+        function getPredicate(range) {
+            var min = range.min !== undefined,
+                max = range.max !== undefined;
+            if(min && max) {
+                return `between ${range.min} and ${range.max}`;
+            } else if(min) {
+                return `greater than ${range.min}`;
+            } else if(max){
+                return `under ${range.max}`;
+            }
+        }
         if(typeof value == 'string') {
-            return `Property "${path}" should have a length between ${range.join(' and ')}.`;
+            return `Property "${path}" should have a length ${getPredicate(range)} characters.`;
         } else if(typeof value == 'number') {
-            return `Property "${path}" should be a number between ${range.join(' and ')}.`;
+            return `Property "${path}" should be a number ${getPredicate(range)}.`;
         } else if (Array.isArray(value)) {
-            return `Property "${path}" should have between ${range.join(' and ')} elements.`;
+            return `Property "${path}" should be ${getPredicate(range)} elements.`;
         }
     },
     match: (path, regex) => `Property "${path}" should match the following regex ${regex}.`
@@ -95,12 +105,23 @@ function validation(schema, data) {
 }
 
 function checkRule(rule, ruleValue, propValue) {
+    // Allow native JS type constructors
+    var constructedType;
+    try {
+        constructedType = ruleValue();
+    } catch(e) {}
+    if(constructedType !== undefined) {
+        ruleValue = typeof constructedType;
+    }
+
+    // Prevent not present non required value from triggering other rules
     if(propValue === undefined) {
         if(rule == 'required' && ruleValue) {
             return false;
         }
         return true;
     }
+
     switch (rule) {
         case 'type':
             if(ruleValue == 'array') {
@@ -124,7 +145,15 @@ function checkRule(rule, ruleValue, propValue) {
             if(typeof propValue == 'string')  {
                 size = [...propValue].length;
             }
-            return size && size <= ruleValue[1] && size >= ruleValue[0];
+            var min = true,
+                max = true;
+            if(ruleValue.max !== undefined) {
+                max = size <= ruleValue.max;
+            }
+            if(ruleValue.min !== undefined) {
+                min = size >= ruleValue.min;
+            }
+            return max && min;
         default:
             return true;
     }
