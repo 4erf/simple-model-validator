@@ -1,15 +1,27 @@
 {
-  "name": "model_validator",
-  "version": "1.0.0",
-  "description": "",
+  "name": "simple-model-validator",
+  "version": "0.0.1",
+  "description": "Simple JSON validation based on models.",
   "main": "src/model.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Eduardo Fernandes",
+  "license": "MIT",
   "devDependencies": {
     "mocha": "^7.2.0 tests/*"
-  }
+  },
+  "directories": {
+    "test": "tests"
+  },
+  "dependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/4erf/simple-model-validator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/4erf/simple-model-validator/issues"
+  },
+  "homepage": "https://github.com/4erf/simple-model-validator#readme"
 }

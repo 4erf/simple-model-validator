@@ -4,6 +4,7 @@ class ModelError extends Error {
         this.name = 'Model Error';
     }
 }
+
 var defaultErrors = {
     required: (path) => `Required property "${path}" missing.`,
     type: (path, type) => `Type of property "${path}" should be ${type}.`,
@@ -36,7 +37,18 @@ var api = {
     ModelError
 };
 
-module.exports = api;
+/* UMD */
+(function (root, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define([], factory);
+    } else if (typeof module === 'object' && module.exports) {
+        module.exports = factory();
+    } else {
+        root.returnExports = factory();
+    }
+}(typeof self !== 'undefined' ? self : this, function () {
+    return api;
+}));
 
 //****************************************************************************
 
