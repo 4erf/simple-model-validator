@@ -5,10 +5,21 @@ Dead **simple**, strict JSON validator based on models.
 
 Define model:
 ```javascript
+var { Model } = require('simple-model-validator')
+
 var model = new Model([{  
-    name: { type: String, required: true },  
-    age: { type: Number, required: true },  
-    married: { type: Boolean, required: true },  
+    name: { 
+        type: String, 
+        required: true 
+    },  
+    age: { 
+        type: Number, 
+        required: true 
+    },  
+    married: { 
+        type: Boolean, 
+        required: true 
+    },  
     children: {  
         type: Array,  
         elements: { type: model }  
