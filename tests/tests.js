@@ -46,12 +46,12 @@ describe('Model Builder', function() {
                 model.validate(data);
             }, error);
         });
-        it('should reject invalid type for: boolean', function() {
+        it('should reject invalid type for: array', function() {
             var model = new Model([{
-                crashed: { type: 'boolean' }
+                crashed: { type: 'array', elements: { type: 'string' } }
             }]);
-            var data = { crashed: 1 };
-            var error = new ModelError('Type of property "crashed" should be boolean.');
+            var data = { crashed: "['5']" };
+            var error = new ModelError('Type of property "crashed" should be array.');
             assert.throws(() => {
                 model.validate(data);
             }, error);

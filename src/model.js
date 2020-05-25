@@ -98,8 +98,9 @@ function validation(schema, data) {
                 }
             }
         } else if(typeof schema == 'object') {
-            errors.push(...checkValue(schema, data, nest));
-            if(schema.type === 'array') {
+            var valueErrors = checkValue(schema, data, nest);
+            errors.push(...valueErrors);
+            if(schema.type === 'array' && valueErrors.length == 0) {
                 let res = doValidation(buildArrayRules(data, schema), data, nest, []);
                 return res;
             } else if(schema instanceof api.Model) {
