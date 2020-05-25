@@ -102,6 +102,20 @@ describe('Model Builder', function() {
                 model.validate(data);
             }, error);
         });
+        it('should allow literal RegExp', function () {
+            var model = new Model([{
+                hash: { match: /[0-9A-F]{4}/ }
+            }]);
+            var data = { hash: 'E3FC' };
+            assert.deepStrictEqual(model.validate(data), data);
+        });
+        it('should allow constructed RegExp', function () {
+            var model = new Model([{
+                hash: { match: new RegExp(`[0-9A-F]{4}`) }
+            }]);
+            var data = { hash: 'E3FC' };
+            assert.deepStrictEqual(model.validate(data), data);
+        });
     });
 
     describe('Range', function () {

@@ -53,4 +53,4 @@ Then just validate like this:
 model.validate(data)
 ```
 
-It will return the final object or throw an error.
+It will return the final object or throw an error instead.

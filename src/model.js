@@ -1,7 +1,9 @@
+'use strict';
+
 class ModelError extends Error {
     constructor(...args) {
         super(...args);
-        this.name = 'Model Error';
+        this.name = 'Validation Error';
     }
 }
 
@@ -144,8 +146,13 @@ function checkRule(rule, ruleValue, propValue) {
         case 'enum':
             return ruleValue.includes(propValue);
         case 'match':
-            if(typeof propValue != 'string') return false;
-            var regex = new RegExp(ruleValue);
+            var regex;
+            if(propValue instanceof RegExp) {
+                regex = propValue.test(propValue);
+            } else {
+                if(typeof propValue != 'string') return false;
+                regex = new RegExp(ruleValue);
+            }
             return regex.test(propValue);
         case 'range':
             var size;
