@@ -1,0 +1,15 @@
+{
+  "name": "model_validator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/model.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "mocha": "^7.2.0 tests/*"
+  }
+}
