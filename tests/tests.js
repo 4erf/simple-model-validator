@@ -2,6 +2,61 @@ var assert = require('assert').strict;
 var {Model, ModelError} = require('../src/model');
 
 describe('Model Builder', function() {
+    describe('Showcase', function () {
+        it('should pass showcase example', function() {
+            var model = new Model([{
+                name: {
+                    type: String,
+                    required: true,
+                    match: /[A-Za-z\x20]+/
+                },
+                age: {
+                    type: Number,
+                    required: true,
+                    range: {
+                        min: 0,
+                        max: 99
+                    }
+                },
+                married: {
+                    type: Boolean,
+                    required: true,
+                },
+                sex: {
+                    type: 'string',
+                    enum: ['male', 'female']
+                },
+                children: {
+                    type: Array,
+                    elements: { type: 'self' }
+                }
+            }]);
+            var data = {
+                name: 'Alice',
+                sex: 'female',
+                age: 42,
+                married: true,
+                children: [
+                    {
+                        name: 'Bob',
+                        age: 13,
+                        married: false,
+                        children: []
+                    },
+                    {
+                        name: 'Charlie',
+                        sex: 'male',
+                        age: 21,
+                        married: false,
+                        children: []
+                    },
+                ]
+            };
+
+            assert.deepStrictEqual(model.validate(data), data);
+        });
+    });
+
     describe('Names', function () {
         it('should reject required but invalid property names', function() {
             var model = new Model([{
