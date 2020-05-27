@@ -1,15 +1,23 @@
 'use strict';
 
 class ModelError extends Error {
-    constructor(...args) {
+    constructor(errorArray, ...args) {
         super(...args);
         this.name = 'Validation Error';
+        this.errors = errorArray;
+        this.message = this.errors.join('\n');
     }
 }
 
 var defaultErrors = {
     required: (path) => `Required property "${path}" missing.`,
-    type: (path, type) => `Type of property "${path}" should be ${type}.`,
+    type: (path, type) => {
+        if(typeOf(type) == 'array') {
+            return `Type of property "${path}" should be ${type.join(', ')}.`;
+        } else {
+            return `Type of property "${path}" should be ${type}.`;
+        }
+    },
     enum: (path, enumVals) => `Property "${path}" should be ${enumVals.join(', ')}.`,
     range: (path, range, value) => {
         function getPredicate(range) {
@@ -73,6 +81,15 @@ function modelBuilder(schema) {
 function checkValue(rules, value, nest) {
     var errors = [];
     for(let [rule, ruleValue] of Object.entries(rules)) {
+        // Allow native JS type constructors
+        if(rule == 'type') {
+            ruleValue = getRuleType(ruleValue);
+            if(ruleValue == 'self') continue;
+        }
+        // Prevent violation of required rule from triggering other rules;
+        if(value === undefined && (rule != 'required' || !ruleValue)) {
+            continue;
+        }
         if(!checkRule(rule, ruleValue, value)) {
             errors.push(getErrorMessage(rule, rules.message, nest, ruleValue, value));
         }
@@ -87,11 +104,11 @@ function checkValue(rules, value, nest) {
 * @return result: object | array                The final object or array
 * @return errors: array                         All errors that arise in order
 */
-function validation(schema, data) {
+function validation(_schema, _data) {
     var errors = [];
     function doValidation(schema, data, nest = [], result = {}) {
-        if(Array.isArray(schema)) {
-            errors.push(...checkValue({type: 'object'}, data, nest));
+        if(typeOf(schema) == 'array') {
+            errors.push(...checkValue({type: ['object', 'array']}, data, nest));
             var object = schema[0];
             for(let [key, rules] of Object.entries(object)) {
                 var res = doValidation(rules, data[key], [...nest, key]);
@@ -99,14 +116,17 @@ function validation(schema, data) {
                     result[key] = res;
                 }
             }
-        } else if(typeof schema == 'object') {
+        } else if(typeOf(schema) == 'object') {
             var valueErrors = checkValue(schema, data, nest);
             errors.push(...valueErrors);
-            if(schema.type === 'array' && valueErrors.length == 0) {
+            if(shouldProcessAsArray(schema, data) && valueErrors.length == 0) {
                 let res = doValidation(buildArrayRules(data, schema), data, nest, []);
                 return res;
             } else if(schema instanceof api.Model) {
                 let res = doValidation(schema.schema, data, nest);
+                return res;
+            } else if(schema.type === 'self' && data !== undefined) {
+                let res = doValidation(_schema, data, nest);
                 return res;
             } else {
                 return data;
@@ -116,33 +136,18 @@ function validation(schema, data) {
         }
         return result;
     }
-    return {result: doValidation(schema, data), errors};
+    return {result: doValidation(_schema, _data), errors};
 }
 
 function checkRule(rule, ruleValue, propValue) {
-    // Allow native JS type constructors
-    var constructedType;
-    try {
-        constructedType = ruleValue();
-    } catch(e) {}
-    if(constructedType !== undefined) {
-        ruleValue = typeof constructedType;
-    }
-
-    // Prevent not present non required value from triggering other rules
-    if(propValue === undefined) {
-        if(rule == 'required' && ruleValue) {
-            return false;
-        }
-        return true;
-    }
-
     switch (rule) {
+        case 'required':
+            return !ruleValue || propValue !== undefined;
         case 'type':
-            if(ruleValue == 'array') {
-                return Array.isArray(propValue);
+            if(typeOf(ruleValue) == 'array') {
+                return ruleValue.includes(typeOf(propValue));
             }
-            return typeof propValue == ruleValue;
+            return typeOf(propValue) == ruleValue;
         case 'enum':
             return ruleValue.includes(propValue);
         case 'match':
@@ -156,14 +161,16 @@ function checkRule(rule, ruleValue, propValue) {
             return regex.test(propValue);
         case 'range':
             var size;
-            if(Array.isArray(propValue)) {
-                size = propValue.length;
-            }
-            if(typeof propValue == 'number') {
-                size = propValue;
-            }
-            if(typeof propValue == 'string')  {
-                size = [...propValue].length;
+            switch (typeOf(propValue)) {
+                case 'array':
+                    size = propValue.length;
+                    break;
+                case 'number':
+                    size = propValue;
+                    break;
+                case 'string':
+                    size = [...propValue].length;
+                    break;
             }
             var min = true,
                 max = true;
@@ -207,8 +214,43 @@ function buildArrayRules(data, schema) {
     return arrayRules;
 }
 
+function typeOfConstructor(constructor) {
+    var constructedType;
+    try {
+        constructedType = constructor();
+    } catch (e) {
+    }
+    return typeOf(constructedType);
+}
+
+function typeOf(variable) {
+    if (Array.isArray(variable)) {
+        return 'array';
+    } else {
+        return typeof variable;
+    }
+}
+
+function getRuleType(typeOrConstructor) {
+    if(typeof typeOrConstructor == 'function') {
+        var constructor = typeOrConstructor;
+        return typeOfConstructor(constructor);
+    }
+    var type = typeOrConstructor;
+    return type;
+}
+
+function shouldProcessAsArray(schema, data) {
+    return getRuleType(schema.type) == 'array' ||
+    (
+        typeOf(schema.type) == 'array' &&
+        schema.type.includes('array') &&
+        typeOf(data) == 'array'
+    );
+}
+
 function throwErrors(errors) {
     if(errors.length > 0) {
-        throw new ModelError(errors.join('\n'));
+        throw new ModelError(errors);
     }
 }

@@ -5,10 +5,10 @@ describe('Model Builder', function() {
     describe('Names', function () {
         it('should reject required but invalid property names', function() {
             var model = new Model([{
-                name: { required: true }
+                name: { type:'string', required: true }
             }]);
             var data = { nrame: 'name' };
-            var error = new ModelError('Required property "name" missing.');
+            var error = new ModelError(['Required property "name" missing.']);
             assert.throws(() => {
                 model.validate(data);
             }, error);
@@ -21,7 +21,7 @@ describe('Model Builder', function() {
                 name: { type: 'string' }
             }]);
             var data = { name: 5 };
-            var error = new ModelError('Type of property "name" should be string.');
+            var error = new ModelError(['Type of property "name" should be string.']);
             assert.throws(() => {
                 model.validate(data);
             }, error);
@@ -31,7 +31,7 @@ describe('Model Builder', function() {
                 year: { type: 'number' }
             }]);
             var data = { year: '2018' };
-            var error = new ModelError('Type of property "year" should be number.');
+            var error = new ModelError(['Type of property "year" should be number.']);
             assert.throws(() => {
                 model.validate(data);
             }, error);
@@ -41,7 +41,7 @@ describe('Model Builder', function() {
                 crashed: { type: 'boolean' }
             }]);
             var data = { crashed: 1 };
-            var error = new ModelError('Type of property "crashed" should be boolean.');
+            var error = new ModelError(['Type of property "crashed" should be boolean.']);
             assert.throws(() => {
                 model.validate(data);
             }, error);
@@ -51,7 +51,36 @@ describe('Model Builder', function() {
                 crashed: { type: 'array', elements: { type: 'string' } }
             }]);
             var data = { crashed: "['5']" };
-            var error = new ModelError('Type of property "crashed" should be array.');
+            var error = new ModelError(['Type of property "crashed" should be array.']);
+            assert.throws(() => {
+                model.validate(data);
+            }, error);
+        });
+        it('should reject invalid type for multiple types', function() {
+            var model = new Model([{
+                crashed: { type: ['array', "number"], elements: { type: 'string' } }
+            }]);
+            var data = { crashed: "['5']" };
+            var error = new ModelError(['Type of property "crashed" should be array, number.']);
+            assert.throws(() => {
+                model.validate(data);
+            }, error);
+        });
+
+        it('should allow matching type: string', function() {
+            var model = new Model([{
+                crashed: { type: ['array', "number", "string"], elements: { type: 'string' } }
+            }]);
+            var data = { crashed: "['5']" };
+            assert.deepStrictEqual(model.validate(data), data);
+        });
+
+        it('should reject invalid type inside matching type: array', function() {
+            var model = new Model([{
+                crashed: { type: ['array', "number", "string"], elements: { type: 'string' } }
+            }]);
+            var data = { crashed: ['5', 4] };
+            var error = new ModelError(['Type of property "crashed.1" should be string.']);
             assert.throws(() => {
                 model.validate(data);
             }, error);
@@ -64,7 +93,7 @@ describe('Model Builder', function() {
                 weather: { enum: ['rainy', 'clear'] }
             }]);
             var data = { weather: 'windy' };
-            var error = new ModelError('Property "weather" should be rainy, clear.');
+            var error = new ModelError(['Property "weather" should be rainy, clear.']);
             assert.throws(() => {
                 model.validate(data);
             }, error);
@@ -74,7 +103,7 @@ describe('Model Builder', function() {
                 number: { enum: ['420', '911'] }
             }]);
             var data = { number: 420 };
-            var error = new ModelError('Property "number" should be 420, 911.');
+            var error = new ModelError(['Property "number" should be 420, 911.']);
             assert.throws(() => {
                 model.validate(data);
             }, error);
@@ -87,7 +116,7 @@ describe('Model Builder', function() {
                 hash: { match: `[0-9A-F]{4}` }
             }]);
             var data = { hash: '9pF2' };
-            var error = new ModelError('Property "hash" should match the following regex [0-9A-F]{4}.');
+            var error = new ModelError(['Property "hash" should match the following regex [0-9A-F]{4}.']);
             assert.throws(() => {
                 model.validate(data);
             }, error);
@@ -97,7 +126,7 @@ describe('Model Builder', function() {
                 hash: { match: `[0-9A-F]{4}` }
             }]);
             var data = { hash: 3241 };
-            var error = new ModelError('Property "hash" should match the following regex [0-9A-F]{4}.');
+            var error = new ModelError(['Property "hash" should match the following regex [0-9A-F]{4}.']);
             assert.throws(() => {
                 model.validate(data);
             }, error);
@@ -129,7 +158,7 @@ describe('Model Builder', function() {
                 }
             }]);
             var data = { age: -1 };
-            var error = new ModelError('Property "age" should be a number between 0 and 100.');
+            var error = new ModelError(['Property "age" should be a number between 0 and 100.']);
             assert.throws(() => {
                 model.validate(data);
             }, error);
@@ -144,7 +173,7 @@ describe('Model Builder', function() {
                 }
             }]);
             var data = { age: 125 };
-            var error = new ModelError('Property "age" should be a number between 0 and 100.');
+            var error = new ModelError(['Property "age" should be a number between 0 and 100.']);
             assert.throws(() => {
                 model.validate(data);
             }, error);
@@ -158,7 +187,7 @@ describe('Model Builder', function() {
                 }
             }]);
             var data = { nationality: 'us' };
-            var error = new ModelError('Property "nationality" should have a length greater than 5 characters.');
+            var error = new ModelError(['Property "nationality" should have a length greater than 5 characters.']);
             assert.throws(() => {
                 model.validate(data);
             }, error);
@@ -172,7 +201,7 @@ describe('Model Builder', function() {
                 }
             }]);
             var data = { nationality: 'Citizen of the World' };
-            var error = new ModelError('Property "nationality" should have a length under 10 characters.');
+            var error = new ModelError(['Property "nationality" should have a length under 10 characters.']);
             assert.throws(() => {
                 model.validate(data);
             }, error);
@@ -187,7 +216,7 @@ describe('Model Builder', function() {
                 }
             }]);
             var data = { nationality: 'Albania' };
-            var error = new ModelError('Property "nationality" should have a length between 5 and 10 characters.');
+            var error = new ModelError(['Property "nationality" should have a length between 5 and 10 characters.']);
             assert.deepStrictEqual(model.validate(data), data);
         });
         it('should allow values on range lower bounded', function () {
@@ -223,7 +252,7 @@ describe('Model Builder', function() {
                 }
             }]);
             var data = {crashed: 1};
-            var error = new ModelError('mayday');
+            var error = new ModelError(['mayday']);
             assert.throws(() => {
                 model.validate(data);
             }, error);
@@ -238,7 +267,7 @@ describe('Model Builder', function() {
                 }
             }]);
             var data = {crashed: 1};
-            var error = new ModelError('mayday');
+            var error = new ModelError(['mayday']);
             assert.throws(() => {
                 model.validate(data);
             }, error);
@@ -258,7 +287,7 @@ describe('Model Builder', function() {
                 }]
             }]);
             var data = { location: {lon: '54.342'} };
-            var error = new ModelError('"location.lon" should be number');
+            var error = new ModelError(['"location.lon" should be number']);
             assert.throws(() => {
                 model.validate(data);
             }, error);
@@ -266,7 +295,7 @@ describe('Model Builder', function() {
     });
 
     describe('Objects', function() {
-        it('should reject primitive in place of object', function () {
+        it('should reject primitive in place of object/array', function () {
             var model = new Model([{
                 location: [{
                     lon: {
@@ -275,7 +304,7 @@ describe('Model Builder', function() {
                 }]
             }]);
             var data = { location: 443 };
-            var error = new ModelError('Type of property "location" should be object.');
+            var error = new ModelError(['Type of property "location" should be object, array.']);
             assert.throws(() => {
                 model.validate(data);
             }, error);
@@ -288,7 +317,7 @@ describe('Model Builder', function() {
                 type: 'number'
             });
             var data = 'hi';
-            var error = new ModelError('Type of property "" should be number.');
+            var error = new ModelError(['Type of property "" should be number.']);
             assert.throws(() => {
                 model.validate(data);
             }, error);
@@ -301,7 +330,7 @@ describe('Model Builder', function() {
                 }
             });
             var data = [3, '1', 4];
-            var error = new ModelError('Type of property "1" should be number.');
+            var error = new ModelError(['Type of property "1" should be number.']);
             assert.throws(() => {
                 model.validate(data);
             }, error);
@@ -318,7 +347,7 @@ describe('Model Builder', function() {
                 elements: {type: 'number'}
             });
             var data = [1, 2, 'c'];
-            var error = new ModelError('Type of property "2" should be number.');
+            var error = new ModelError(['Type of property "2" should be number.']);
             assert.throws(() => {
                 model.validate(data);
             }, error);
@@ -343,7 +372,7 @@ describe('Model Builder', function() {
             var data = {
                 rooms: [{size: 4, parke: true}, {size: 2}, {size: '2'}]
             };
-            var error = new ModelError('Type of property "rooms.2.size" should be number.');
+            var error = new ModelError(['Type of property "rooms.2.size" should be number.']);
             assert.throws(() => {
                 model.validate(data);
             }, error);
@@ -364,7 +393,7 @@ describe('Model Builder', function() {
                 }
             });
             var data = [[[2,3],['3',1]]];
-            var error = new ModelError('Type of property "0.1.0" should be number.');
+            var error = new ModelError(['Type of property "0.1.0" should be number.']);
             assert.throws(() => {
                 model.validate(data);
             }, error);
@@ -394,7 +423,7 @@ describe('Model Builder', function() {
                 married: { type: Boolean, required: true },
                 children: {
                     type: Array,
-                    elements: { type: model }
+                    elements: { type: 'self' }
                 }
             }]);
             var data = {
@@ -405,16 +434,28 @@ describe('Model Builder', function() {
                     {
                         name: 'Bob',
                         age: 13,
-                        married: false
+                        married: false,
+                        children: []
                     },
                     {
                         name: 'Charlie',
                         age: 21,
-                        married: false
+                        married: false,
+                        children: []
                     },
                 ]
             };
             assert.deepStrictEqual(model.validate(data), data);
+        });
+        it('should reject invalid type for: string', function() {
+            var model = new Model([{
+                name: { type: String }
+            }]);
+            var data = { name: 5 };
+            var error = new ModelError(['Type of property "name" should be string.']);
+            assert.throws(() => {
+                model.validate(data);
+            }, error);
         });
     });
 
@@ -449,19 +490,65 @@ describe('Model Builder', function() {
                     email: 42
                 }
             };
-            var error = new ModelError('Type of property "author.email" should be string.');
+            var error = new ModelError(['Type of property "author.email" should be string.']);
             assert.throws(() => {
                 model.validate(data);
             }, error);
         });
-        it('should allow deep nesting', function () {
+        it('should allow self nesting', function () {
+            var model = new Model([{
+                name: { type: String, required: true },
+                age: { type: Number, required: true },
+                married: { type: Boolean, required: true },
+                partner: { type: 'self' }
+            }]);
+            var data = {
+                name: 'Alice',
+                age: 42,
+                married: true,
+                partner: {
+                    name: 'Bob',
+                    age: 42,
+                    married: true
+                }
+            };
+            assert.deepStrictEqual(model.validate(data), data);
+        });
+        it('should reject error from self deep nesting', function () {
+            var model = new Model([{
+                name: { type: String, required: true },
+                age: { type: Number, required: true },
+                married: { type: Boolean, required: true },
+                partner: { type: 'self' }
+            }]);
+            var data = {
+                name: 'Alice',
+                age: 42,
+                married: true,
+                partner: {
+                    name: 'Bob',
+                    age: 42,
+                    married: true,
+                    partner: {
+                        name: 'Charlie',
+                        age: '42',
+                        married: false
+                    }
+                }
+            };
+            var error = new ModelError(['Type of property "partner.partner.age" should be number.']);
+            assert.throws(() => {
+                model.validate(data);
+            }, error);
+        });
+        it('should allow deep array nesting', function () {
             var model = new Model([{
                 name: { type: String, required: true },
                 age: { type: Number, required: true },
                 married: { type: Boolean, required: true },
                 children: {
                     type: Array,
-                    elements: { type: model }
+                    elements: { type: 'self' }
                 }
             }]);
             var data = {
@@ -472,7 +559,8 @@ describe('Model Builder', function() {
                     {
                         name: 'Bob',
                         age: 13,
-                        married: false
+                        married: false,
+                        children: []
                     },
                     {
                         name: 'Charlie',
@@ -482,13 +570,55 @@ describe('Model Builder', function() {
                             {
                                 name: 'David',
                                 age: 1,
-                                married: false
+                                married: false,
+                                children: []
                             }
                         ]
                     },
                 ]
             };
             assert.deepStrictEqual(model.validate(data), data);
+        });
+        it('should reject invalid rules inside deep array nesting', function () {
+            var model = new Model([{
+                name: { type: String, required: true },
+                age: { type: Number, required: true },
+                married: { type: Boolean, required: true },
+                children: {
+                    type: 'array',
+                    elements: { type: 'self' }
+                }
+            }]);
+            var data = {
+                name: 'Alice',
+                age: 42,
+                married: true,
+                children: [
+                    {
+                        name: 'Bob',
+                        age: 13,
+                        married: false,
+                        children: []
+                    },
+                    {
+                        name: 'Charlie',
+                        age: 21,
+                        married: true,
+                        children: [
+                            {
+                                name: 'David',
+                                age: '1',
+                                married: false,
+                                children: []
+                            }
+                        ]
+                    },
+                ]
+            };
+            var error = new ModelError(['Type of property "children.1.children.0.age" should be number.']);
+            assert.throws(() => {
+                model.validate(data);
+            }, error);
         });
     });
 
@@ -577,7 +707,7 @@ describe('Model Builder', function() {
         it('should reject non existing name', function () {
             var data = clone(base);
             delete data.name;
-            var error = new ModelError('name required');
+            var error = new ModelError(['name required']);
             assert.throws(() => {
                 model.validate(data);
             }, error);
@@ -586,7 +716,7 @@ describe('Model Builder', function() {
         it('should reject invalid name', function () {
             var data = clone(base);
             data.name = 'X7!@';
-            var error = new ModelError('should be only letters and spaces');
+            var error = new ModelError(['should be only letters and spaces']);
             assert.throws(() => {
                 model.validate(data);
             }, error);
@@ -597,8 +727,10 @@ describe('Model Builder', function() {
             Object.assign(data, base);
             data.name = Symbol();
             var error = new ModelError(
-                'Type of property "name" should be string.\n' +
-                'should be only letters and spaces'
+                [
+                    'Type of property "name" should be string.',
+                    'should be only letters and spaces'
+                ]
             );
             assert.throws(() => {
                 model.validate(data);
@@ -609,8 +741,10 @@ describe('Model Builder', function() {
             var data = clone(base);
             data.name = Symbol();
             var error = new ModelError(
-                'Type of property "name" should be string.\n' +
-                'should be only letters and spaces'
+                [
+                    'Type of property "name" should be string.',
+                    'should be only letters and spaces'
+                ]
             );
             assert.throws(() => {
                 model.validate(data);
@@ -621,8 +755,10 @@ describe('Model Builder', function() {
             var data = clone(base);
             data.location.lat = Symbol();
             var error = new ModelError(
-                'Type of property "location.lat" should be number.\n' +
-                'invalid latitude'
+                [
+                    'Type of property "location.lat" should be number.',
+                    'invalid latitude'
+                ]
             );
             assert.throws(() => {
                 model.validate(data);

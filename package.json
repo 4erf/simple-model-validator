@@ -1,10 +1,10 @@
 {
   "name": "simple-model-validator",
-  "version": "0.0.2",
-  "description": "Simple JSON validation based on models.",
+  "version": "0.0.4",
+  "description": "Simple JSON validator based on models.",
   "main": "src/model.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha tests/*"
   },
   "keywords": [],
   "author": "Eduardo Fernandes",
