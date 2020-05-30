@@ -39,7 +39,8 @@ var defaultErrors = {
             return `Property "${path}" should be ${getPredicate(range)} elements.`;
         }
     },
-    match: (path, regex) => `Property "${path}" should match the following regex ${regex}.`
+    match: (path, regex) => `Property "${path}" should match the following regex ${regex}.`,
+    custom: (path) => `Validation failed for property "${path}" on custom validator`
 };
 
 var api = {
@@ -120,8 +121,12 @@ function validation(_schema, _data) {
             var valueErrors = checkValue(schema, data, nest);
             errors.push(...valueErrors);
             if(shouldProcessAsArray(schema, data) && valueErrors.length == 0) {
-                let res = doValidation(buildArrayRules(data, schema), data, nest, []);
-                return res;
+                var arrayRules = buildArrayRules(data, schema);
+                if(arrayRules !== undefined) {
+                    return doValidation(buildArrayRules(data, schema), data, nest, []);
+                } else {
+                    return data;
+                }
             } else if(schema instanceof api.Model) {
                 let res = doValidation(schema.schema, data, nest);
                 return res;
@@ -181,6 +186,8 @@ function checkRule(rule, ruleValue, propValue) {
                 min = size >= ruleValue.min;
             }
             return max && min;
+        case 'custom':
+            return ruleValue(propValue);
         default:
             return true;
     }
@@ -207,6 +214,9 @@ function getErrorMessage(rule, message, nest, ruleValue, propValue) {
 }
 
 function buildArrayRules(data, schema) {
+    if(schema.elements === undefined) {
+        return undefined;
+    }
     var arrayRules = [{}];
     for (var i in data) {
         arrayRules[0][i] = schema.elements;

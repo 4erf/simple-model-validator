@@ -1,12 +1,12 @@
 {
   "name": "simple-model-validator",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Simple JSON validator based on models.",
   "main": "src/model.js",
   "scripts": {
     "test": "mocha tests/*"
   },
-  "keywords": [],
+  "keywords": "model, validation, json, type",
   "author": "Eduardo Fernandes",
   "license": "MIT",
   "devDependencies": {

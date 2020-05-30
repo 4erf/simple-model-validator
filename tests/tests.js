@@ -468,6 +468,86 @@ describe('Model Builder', function() {
             var data = [{size: 4, parke: true}, {size: 2}, {size: 2}];
             assert.deepStrictEqual(model.validate(data), data);
         });
+        it('should allow no validation of elements', function () {
+            var model = new Model({
+                type: 'array'
+            });
+            var data = [{size: 4, parke: 'true'}, {size: 2}, {size: 2}];
+            assert.deepStrictEqual(model.validate(data), data);
+        });
+    });
+
+    describe('Custom Validator', function () {
+        /**
+         * Source: https://stackoverflow.com/questions/17369098/simplest-way-of-getting-the-number-of-decimals-in-a-number-in-javascript
+         */
+        function has5DecimalPlaces(value) {
+            if(Math.floor(value.valueOf()) === value.valueOf()) return 0;
+            var decimals =  value.toString().split(".")[1].length || 0;
+            return decimals >= 5;
+        }
+
+        it('should reject error from passed function', function () {
+            var model = new Model([{
+                lat: {
+                    type: Number,
+                    custom: has5DecimalPlaces,
+                    message: {
+                        custom: 'Invalid Latitude precision'
+                    }
+                },
+                lon: {
+                    type: Number
+                }
+            }]);
+            var data = {lat: 54.332, lon: 12.344425};
+            var error = new ModelError(['Invalid Latitude precision']);
+            assert.throws(() => {
+                model.validate(data);
+            }, error);
+        });
+
+        function isASequenceOf2(array) {
+            var should = 0;
+            for(let num of array) {
+                if(num != should) {
+                    return false;
+                }
+                should += 2;
+            }
+            return true;
+        }
+        it('should reject error from array', function () {
+            var model = new Model({
+                type: Array,
+                custom: isASequenceOf2,
+                message: {
+                    custom: 'Invalid sequence'
+                }
+            });
+            var data = [0,2,4,7];
+            var error = new ModelError(['Invalid sequence']);
+            assert.throws(() => {
+                model.validate(data);
+            }, error);
+        });
+
+        it('should allow validation from passed function', function () {
+            var model = new Model([{
+                lat: {
+                    type: Number,
+                    custom: has5DecimalPlaces,
+                    message: {
+                        custom: 'Invalid Latitude precision'
+                    }
+                },
+                lon: {
+                    type: Number
+                }
+            }]);
+            var data = {lat: 54.33254, lon: 12.344425};
+            assert.deepStrictEqual(model.validate(data), data);
+        });
     });
 
     describe('JavaScript Types', function() {

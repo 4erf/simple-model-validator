@@ -47,8 +47,7 @@ var data = {
         {
             name: 'Bob',
             age: 13,
-            married: false,
-            children: []
+            married: false
         },
         {
             name: 'Charlie',
